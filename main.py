@@ -68,9 +68,10 @@ async def get_intro_type(intro_query: dict):
     logger.debug(f"Received query: {intro_query}")
     try:
         if "version" not in intro_query.keys() or intro_query["version"] == "latest":
-            return intros[intro_query["type"]].get_latest()
+            intro = { intro_query["type"]: intros[intro_query["type"]].get_latest() }
         else:
-            return intros[intro_query["type"]].get_version(intro_query["version"])
+            intro = { intro_query["version"]: intros[intro_query["type"]].get_version(intro_query["version"]) }
+        return intro
     except KeyError:
         logger.debug(f"All versions: {intros}")
         return "Not Found"
