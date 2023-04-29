@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from log_themed import logger
 
 
 app = FastAPI(title='Resume Builder',
@@ -64,12 +65,14 @@ async def add_or_update_intro(intro_query: dict):
 
 @app.get("/intro")
 async def get_intro_type(intro_query: dict):
+    logger.debug(f"Received query: {intro_query}")
     try:
         if "version" not in intro_query.keys() or intro_query["version"] == "latest":
             return intros[intro_query["type"]].get_latest()
         else:
             return intros[intro_query["type"]].get_version(intro_query["version"])
     except KeyError:
+        logger.debug(f"All versions: {intros}")
         return "Not Found"
 
 @app.delete("/intro")
@@ -80,3 +83,5 @@ async def delete_intro_type(intro_query: dict):
 # @app.post("/intro/tag")
 # async def tag_intro(intro_query: dict):
 #     pass
+
+logger.info("Server has started")
