@@ -33,29 +33,27 @@ class Versioned():
 
 
 class Intro(BaseModel):
-    intro_type: str
     markdown: str
 
 
-intros: list[Versioned] = []
+intros: dict[Versioned] = {}
 
 
 @app.post("/populate")
 async def populate_demo_data():
-    intros.append(Versioned(Intro(intro_type="senior", markdown="I'm a senior engineer!")))
-    intros.append(Versioned(Intro(intro_type="tech lead", markdown="I was a tech lead!")))
+    intros["senior"] = Versioned(Intro(markdown="I'm a senior engineer!"))
+    intros["tech_lead"] = Versioned(Intro(markdown="I was a tech lead!"))
 
 @app.get("/intros")
 async def get_intros():
-    latest_intros = []
-    for intro in intros:
-        latest_intros.append(intro.get_latest())
+    latest_intros = {}
+    for intro_type, intro in intros.items():
+        latest_intros[intro_type] = intro.get_latest()
     return latest_intros
 
 @app.get("/intro")
 async def get_intro_type(intro_query: dict):
-    for intro in intros:
-        if intro.get_latest().intro_type == intro_query["type"]:
-            return intro.get_latest()
-    return f"{intro_query['type']} Not Found"
+    return intros[intro_query["type"]].get_latest()
+    # return f"{intro_query['type']} Not Found"
 
+# @app.delete("/intro")
