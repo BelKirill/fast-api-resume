@@ -10,7 +10,8 @@ app = FastAPI(title='Resume Builder',
 class Versioned():
     def __init__(self, first_version: BaseModel):
         self.versions: list[BaseModel] = []
-        self.tags: dict[str, int] = {}
+        # self.tags: dict[str, int] = {}
+        self.deleted_flag: bool = False
 
         version = self.add_version(first_version)
 
@@ -24,13 +25,16 @@ class Versioned():
     def get_version(self, version: int) -> BaseModel:
         return self.versions[version]
     
-    def tag_current(self, tag_name: str) -> bool:
-        dict[tag_name] = len(self.versions) - 1
-        return True
+    # def tag_current(self, tag_name: str) -> bool:
+    #     dict[tag_name] = len(self.versions) - 1
+    #     return True
     
-    def get_tag(self, tag_name: str) -> BaseModel:
-        return self.versions[self.tags["tag_name"]]
+    # def get_tag(self, tag_name: str) -> BaseModel:
+    #     return self.versions[self.tags["tag_name"]]
 
+    def set_delete_flag(self) -> bool:
+        self.deleted_flag = True
+        return True
 
 class Intro(BaseModel):
     markdown: str
@@ -51,9 +55,28 @@ async def get_intros():
         latest_intros[intro_type] = intro.get_latest()
     return latest_intros
 
+@app.post("/intro")
+async def add_or_update_intro(intro_query: dict):
+    if intro_query["type"] in intros.keys():
+        intros[intro_query["type"]].add_version(Intro(markdown=intro_query["markdown"]))
+    else:
+        intros[intro_query["type"]] = Versioned(Intro(markdown=intro_query["markdown"]))
+
 @app.get("/intro")
 async def get_intro_type(intro_query: dict):
-    return intros[intro_query["type"]].get_latest()
-    # return f"{intro_query['type']} Not Found"
+    try:
+        if "version" not in intro_query.keys() or intro_query["version"] == "latest":
+            return intros[intro_query["type"]].get_latest()
+        else:
+            return intros[intro_query["type"]].get_version(intro_query["version"])
+    except KeyError:
+        return "Not Found"
 
-# @app.delete("/intro")
+@app.delete("/intro")
+async def delete_intro_type(intro_query: dict):
+    deleted_item = intros.pop(intro_query["type"])
+    deleted_item.set_delete_flag()
+
+# @app.post("/intro/tag")
+# async def tag_intro(intro_query: dict):
+#     pass
